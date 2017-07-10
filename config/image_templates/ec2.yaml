@@ -1,0 +1,5 @@
+AMI:
+  ubuntu-1604-x86_64:
+    :image: 
+      :base: ami-7a47b41a
+    :region: us-west-2

@@ -33,7 +33,7 @@ A quick acceptance test, named because it has no pre-suites to run
       load_path_option = File.join(beaker_gem_dir, 'acceptance/lib')
 
       sh("beaker",
-         "--hosts", "acceptance/config/nodes/ubuntu-nodes.yml",
+         "--hosts", "acceptance/config/nodes/hosts.yml",
          "--tests", beaker_test_base_dir,
          "--log-level", "debug",
          "--load-path", load_path_option)
