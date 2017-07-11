@@ -4,7 +4,7 @@ Beaker library to use aws hypervisor
 
 # How to use this wizardry
 
-This gem that allows you to use hosts with [aws]() hypervisor with [beaker](https://github.com/puppetlabs/beaker). 
+This gem that allows you to use hosts with [aws](aws.md) hypervisor with [beaker](https://github.com/puppetlabs/beaker). 
 
 ### Right Now? (beaker 3.x)
 
