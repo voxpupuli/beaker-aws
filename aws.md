@@ -79,6 +79,8 @@ The `ami-size` variable refers to
 [instance types](https://aws.amazon.com/ec2/instance-types/) by their model name.
 Some examples of these values are "m3.large", "c4.xlarge", and "r3.8xlarge". The
 default value if this key is not provided used by Beaker is "m1.small".
+
+More info on creating EC2 host file can be found [here](ec2.md)
       
 ### ec2 VM Hostnames
 
