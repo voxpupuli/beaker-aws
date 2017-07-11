@@ -1,5 +1,5 @@
 AMI:
   ubuntu-1604-x86_64:
     :image: 
-      :base: ami-7a47b41a
+      :base: ami-e946bc89
     :region: us-west-2
