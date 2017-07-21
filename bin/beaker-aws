@@ -27,6 +27,6 @@ VERSION_STRING =
 
 
 
-puts '0.0.1'
+puts BeakerAws::VERSION
 
 exit 0
