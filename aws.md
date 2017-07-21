@@ -66,10 +66,13 @@ the AWS hypervisor to provision hosts properly.  They come in this form:
       hypervisor: ec2
       snapshot: <type>
       amisize: <ami-size>
+      platform: <platform-name>
 
 The `host-vmname-value` references the ID created in the Amazon Image Config file
 above.  If not provided, Beaker will try to name an AMI Config using the host's
 platform string.
+
+**Note:** If you are using `amazon-6-x86_64` as `vmname`, you have to specify `platform` as `el-6-x86_64`. Similarly for `amazon-6-i386` use `el-6-i386` as `platform`. 
 
 The `type` references the type variable in the Amazon Image Config file as well,
 so this key picks out the particular AMI ID from the set available for this type
@@ -79,8 +82,6 @@ The `ami-size` variable refers to
 [instance types](https://aws.amazon.com/ec2/instance-types/) by their model name.
 Some examples of these values are "m3.large", "c4.xlarge", and "r3.8xlarge". The
 default value if this key is not provided used by Beaker is "m1.small".
-
-More info on creating EC2 host file can be found [here](ec2.md)
       
 ### ec2 VM Hostnames
 

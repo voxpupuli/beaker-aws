@@ -630,7 +630,6 @@ module Beaker
 	  end
           expect(set_hostnames).to eq(@hosts)
           @hosts.each do |host|
-            puts host[:name]
             expect(host[:vmhostname]).to eq(host[:name])
             expect(host[:vmhostname]).to eq(host.hostname)
           end
@@ -652,8 +651,10 @@ module Beaker
       it "retrieves contents from local ~/.ssh/id_rsa.pub file" do
         # Stub calls to file read/exists
         key_value = 'foobar_Rsa'
-        allow(File).to receive(:exists?).with(/id_dsa.pub/) { false }
-        allow(File).to receive(:exists?).with(/id_rsa.pub/) { true }
+        allow(File).to receive(:exist?).with(/id_dsa.pub/) { false }
+        allow(File).to receive(:exist?).with(/id_dsa/) { false }
+        allow(File).to receive(:exist?).with(/id_rsa.pub/) { true }
+        allow(File).to receive(:exist?).with(/id_rsa/) { true }
         allow(File).to receive(:read).with(/id_rsa.pub/) { key_value }
 
         # Should return contents of allow( previously ).to receivebed id_rsa.pub
@@ -663,8 +664,10 @@ module Beaker
       it "retrieves contents from local ~/.ssh/id_dsa.pub file" do
         # Stub calls to file read/exists
         key_value = 'foobar_Dsa'
-        allow(File).to receive(:exists?).with(/id_rsa.pub/) { false }
-        allow(File).to receive(:exists?).with(/id_dsa.pub/) { true }
+        allow(File).to receive(:exist?).with(/id_rsa.pub/) { false }
+        allow(File).to receive(:exist?).with(/id_rsa/) { false }
+        allow(File).to receive(:exist?).with(/id_dsa.pub/) { true }
+        allow(File).to receive(:exist?).with(/id_dsa/) { true }
         allow(File).to receive(:read).with(/id_dsa.pub/) { key_value }
 
         expect(public_key).to be === key_value
@@ -680,8 +683,8 @@ module Beaker
         aws.instance_variable_set( :@options, opts )
 
         key_value = 'foobar_Custom2'
-        allow(File).to receive(:exists?).with(anything) { false }
-        allow(File).to receive(:exists?).with(/fake_key2/) { true }
+        allow(File).to receive(:exist?).with(anything) { false }
+        allow(File).to receive(:exist?).with(/fake_key2/) { true }
         allow(File).to receive(:read).with(/fake_key2/) { key_value }
 
         expect(public_key).to be === key_value
@@ -974,6 +977,41 @@ module Beaker
           expect(YAML).to receive(:load_file).and_return(fog_hash)
           expect { load_fog_credentials }.to raise_error(err_text)
         end
+      end
+    end
+
+    describe 'test_split_install' do
+      it 'does not add port 8143 if master, dashboard and database are on the same host' do
+        @hosts = [@hosts[0]]
+        @hosts[0][:roles] = ["master", "dashboard", "database"]
+        allow(aws).to receive(:test_split_install)
+        expect(@hosts[0]).not_to have_key(:additional_ports)
+        aws
+      end
+
+      it 'does not add port 8143 if host does not have master, dashboard or database at all' do
+        @hosts = [@hosts[0]]
+        @hosts[0][:roles] = ["agent", "frictionless"]
+        allow(aws).to receive(:test_split_install)
+        expect(@hosts[0]).not_to have_key(:additional_ports)
+        aws
+      end
+
+      it 'adds port 8143 to all the hosts for split install that has either master, dashboard or database' do
+        @hosts = [@hosts[0], @hosts[1], @hosts[2], @hosts[3]]
+        @hosts[0][:roles] = ["master"]
+        @hosts[1][:roles] = ["dashboard"]
+        @hosts[2][:roles] = ["database"]
+        @hosts[3][:roles] = ["agent"]
+        allow(aws).to receive(:test_split_install)
+        expect(@hosts[0]).to have_key(:additional_ports)
+        expect(@hosts[0][:additional_ports]).to include(8143)
+        expect(@hosts[1]).to have_key(:additional_ports)
+        expect(@hosts[1][:additional_ports]).to include(8143)
+        expect(@hosts[2]).to have_key(:additional_ports)
+        expect(@hosts[2][:additional_ports]).to include(8143)
+        expect(@hosts[3]).not_to have_key(:additional_ports)
+        aws
       end
     end
   end
