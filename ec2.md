@@ -2,6 +2,8 @@ Pre-requisite: .fog file correctly configured with your credentials.
 
 hypervisor: ec2
 
+## using credentials ##
+
 ### example .fog file ###
     :default:
       :aws_access_key_id: IMTHEKEYID
@@ -33,6 +35,14 @@ hypervisor: ec2
     CONFIG:
       nfs_server: none
       consoleport: 443
+
+## using role ###
+
+### No fog file needed ###
+### Update CONFIG section of  ec2 hosts file ###
+    CONFIG:
+      use_iam_role: true
+
 
 Currently, there is limited support EC2 nodes; we are adding support for new platforms shortly.
 

@@ -60,8 +60,8 @@ module Beaker
         creds = aws.load_fog_credentials
         expect( creds[:access_key] ).to eq("IMANACCESSKEY")
         expect( creds[:secret_key] ).to eq("supersekritkey")
+        expect( options[:use_iam_role] ).to eq(nil)
       end
-
 
       it 'from environment variables' do
         ENV['AWS_ACCESS_KEY_ID'] = "IMANACCESSKEY"
@@ -70,7 +70,22 @@ module Beaker
         creds = aws.load_env_credentials
         expect( creds[:access_key] ).to eq("IMANACCESSKEY")
         expect( creds[:secret_key] ).to eq("supersekritkey")
+        expect( options[:use_iam_role] ).to eq(nil)
       end
+
+    end
+
+    context 'use iam role' do
+
+      let( :options ) { make_opts.merge({ 'use_iam_role' => true }) }
+
+      it 'using role' do
+        creds = aws.load_env_credentials
+        expect( creds[:access_key] ).to eq(nil)
+        expect( creds[:secret_key] ).to eq(nil)
+        expect( options[:use_iam_role] ).to eq(true)
+      end
+
     end
 
     describe '#provision' do
