@@ -73,6 +73,17 @@ module Beaker
       end
     end
 
+    context 'dont read fog credentials' do
+      let(:options) { make_opts.merge({ 'use_fog_credentials' => false }) }
+
+      it 'not using fog' do
+        creds = aws.load_env_credentials
+        expect( creds[:access_key] ).to eq(nil)
+        expect( creds[:secret_key] ).to eq(nil)
+        expect( options[:use_fog_credentials] ).to eq(false)
+      end
+    end
+
     describe '#provision' do
       before :each do
         expect(aws).to receive(:launch_all_nodes)

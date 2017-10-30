@@ -23,7 +23,7 @@ module Beaker
       @logger = options[:logger]
 
       # Get AWS credentials
-      creds = load_credentials()
+      creds = options[:use_fog_credentials] ? load_credentials() : Hash.new
 
       config = {
         :access_key_id => creds[:access_key],
@@ -32,7 +32,7 @@ module Beaker
         :log_level => :debug,
         :log_formatter => AWS::Core::LogFormatter.colored,
         :max_retries => 12,
-      }
+      }.delete_if{ |k,v| v.nil? }
       AWS.config(config)
 
       @ec2 = AWS::EC2.new()
