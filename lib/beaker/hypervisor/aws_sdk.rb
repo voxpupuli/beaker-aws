@@ -28,6 +28,7 @@ module Beaker
       config = {
         :access_key_id => creds[:access_key],
         :secret_access_key => creds[:secret_key],
+        :session_token => creds[:session_token],
         :logger => Logger.new($stdout),
         :log_level => :debug,
         :log_formatter => AWS::Core::LogFormatter.colored,
@@ -961,8 +962,9 @@ module Beaker
 
       if provider.set?
         {
-          :access_key => provider.access_key_id,
-          :secret_key => provider.secret_access_key,
+          :access_key    => provider.access_key_id,
+          :secret_key    => provider.secret_access_key,
+          :session_token => provider.session_token,
         }
       else
         {}
@@ -981,8 +983,9 @@ module Beaker
       raise "You must specify an aws_secret_access_key in your .fog file (#{dot_fog}) for ec2 instances!" unless default[:aws_secret_access_key]
 
       {
-        :access_key => default[:aws_access_key_id],
-        :secret_key => default[:aws_secret_access_key],
+        :access_key    => default[:aws_access_key_id],
+        :secret_key    => default[:aws_secret_access_key],
+        :session_token => default[:aws_session_token],
       }
     end
 
