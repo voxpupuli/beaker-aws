@@ -10,6 +10,7 @@ module Beaker
         and_return({
           :access_key => fog_file_contents[:default][:aws_access_key_id],
           :secret_key => fog_file_contents[:default][:aws_secret_access_key],
+          :session_token => fog_file_contents[:default][:aws_session_token],
         })
 
 
@@ -60,6 +61,7 @@ module Beaker
         creds = aws.load_fog_credentials
         expect( creds[:access_key] ).to eq("IMANACCESSKEY")
         expect( creds[:secret_key] ).to eq("supersekritkey")
+        expect( creds[:session_token] ).to eq('somecrazylongsupersessiontoken!#%^^*(%$^&@$%#!!#$asd;fjapugfrejklvznb;jdgfjiadvij')
       end
 
 
@@ -70,7 +72,20 @@ module Beaker
         creds = aws.load_env_credentials
         expect( creds[:access_key] ).to eq("IMANACCESSKEY")
         expect( creds[:secret_key] ).to eq("supersekritkey")
+        expect( creds[:session_token] ).to be_nil
       end
+
+      it 'from environment variables with session_token' do
+        ENV['AWS_ACCESS_KEY_ID'] = "IMANACCESSKEY"
+        ENV['AWS_SECRET_ACCESS_KEY'] = "supersekritkey"
+        ENV['AWS_SESSION_TOKEN'] = 'somesuperlongsessiontokenspecialcharsblah!#%$#@$^!@qewpofudjsvjm'
+
+        creds = aws.load_env_credentials
+        expect( creds[:access_key] ).to eq("IMANACCESSKEY")
+        expect( creds[:secret_key] ).to eq("supersekritkey")
+        expect( creds[:session_token] ).to eq('somesuperlongsessiontokenspecialcharsblah!#%$#@$^!@qewpofudjsvjm')
+      end
+
     end
 
     context 'dont read fog credentials' do
@@ -960,12 +975,20 @@ module Beaker
 
     describe '#load_fog_credentials' do
       # Receive#and_call_original below allows us to test the core load_fog_credentials method
-      let(:creds) { {:access_key => 'awskey', :secret_key => 'awspass'} }
       let(:dot_fog) { '.fog' }
       subject(:load_fog_credentials) { aws.load_fog_credentials(dot_fog) }
 
       it 'returns loaded fog credentials' do
+        creds = {:access_key => 'awskey', :secret_key => 'awspass', :session_token => nil}
         fog_hash = {:default => {:aws_access_key_id => 'awskey', :aws_secret_access_key => 'awspass'}}
+        expect(aws).to receive(:load_fog_credentials).and_call_original
+        expect(YAML).to receive(:load_file).and_return(fog_hash)
+        expect(load_fog_credentials).to eq(creds)
+      end
+
+      it 'returns loaded fog credentials with session token' do
+        creds = {:access_key => 'awskey', :secret_key => 'awspass', :session_token => 'sometoken'}
+        fog_hash = {:default => {:aws_access_key_id => 'awskey', :aws_secret_access_key => 'awspass', :aws_session_token => 'sometoken'}}
         expect(aws).to receive(:load_fog_credentials).and_call_original
         expect(YAML).to receive(:load_file).and_return(fog_hash)
         expect(load_fog_credentials).to eq(creds)
