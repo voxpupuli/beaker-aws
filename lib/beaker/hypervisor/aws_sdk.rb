@@ -644,7 +644,7 @@ module Beaker
     def set_hostnames
       if @options[:use_beaker_hostnames]
         @hosts.each do |host|
-          host[:vmhostname] = host[:name]
+          host[:vmhostname] = host.name
           if host['platform'] =~ /el-7/
             # on el-7 hosts, the hostname command doesn't "stick" randomly
             host.exec(Command.new("hostnamectl set-hostname #{host.name}"))
