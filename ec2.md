@@ -34,6 +34,16 @@ hypervisor: ec2
       nfs_server: none
       consoleport: 443
 
+### Using role  
+*(If you'd like to use instance role you can disable reading fog credentials)*
+
+#### No fog file needed ####
+#### Update CONFIG section of ec2 hosts file ####
+    CONFIG:
+      use_fog_credentials: false
+
+
+
 Currently, there is limited support EC2 nodes; we are adding support for new platforms shortly.
 
 AMIs are built for PE based installs on:
@@ -45,6 +55,7 @@ Beaker will automagically provision EC2 nodes, provided the 'platform:' section 
 
 ### Supported EC2 Variables ###
 These variables can either be set per-host or globally.
+
 ####`additional_ports`####
 Ports to be opened on the instance, in addition to those opened by Beaker to support Puppet functionality.  Can be a single value or an array.  Example valid values: 1001, [1001], [1001, 1002].
 
@@ -67,6 +78,7 @@ If defined the instace will be crated in one of the provided array of EC2 subnet
 Used to look up the pre-defined AMI information in `config/image_templates/ec2.yaml`.  Will default to `platform` if not defined.
 #####Example ec2.yaml#####
 In this example the `vmname` would be `puppetlabs-centos-5-x86-64-west`.  Looking up the `vmname` in the `ec2.yaml` file provides an AMI ID by type (`pe` or `foss`) and the region.
+
 ```
 AMI:
   puppetlabs-centos-5-x86-64-west:
@@ -74,6 +86,7 @@ AMI:
       :pe: ami-pl-12345
     :region: us-west-2
 ```
+
 ####`volume_size`####
 Size of the [EBS Volume](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumes.html) that will be attached to the EC2 instance.
 ####`vpc_id`####
