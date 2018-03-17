@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'yard'
   s.add_development_dependency 'markdown'
   s.add_development_dependency 'thin'
+  s.add_development_dependency 'github_changelog_generator'
 
   # Run time dependencies
   s.add_runtime_dependency 'stringify-hash', '~> 0.0.0'
