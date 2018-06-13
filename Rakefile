@@ -12,6 +12,8 @@ namespace :changelog do
 
   GitHubChangelogGenerator::RakeTask.new :full do |config|
     config.token = github_token
+    config.user = "puppetlabs"
+    config.project = "beaker-aws"
     # Sets next version in the changelog
     # - if unset, newest changes will be listed as 'unreleased'
     # - setting this value directly sets section title on newest changes
@@ -22,6 +24,8 @@ namespace :changelog do
 
   GitHubChangelogGenerator::RakeTask.new :unreleased do |config|
     config.token = github_token
+    config.user = "puppetlabs"
+    config.project = "beaker-aws"
     config.unreleased_only = true
     config.output = "" # blank signals clg to print to output rather than a file
   end
