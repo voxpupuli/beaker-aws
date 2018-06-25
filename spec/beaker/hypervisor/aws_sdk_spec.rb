@@ -1088,6 +1088,10 @@ module Beaker
       let(:dot_fog) { '.fog' }
       subject(:load_fog_credentials) { aws.load_fog_credentials(dot_fog) }
 
+      before do
+        expect(File).to receive(:exist?).with(dot_fog) { true }
+      end
+
       it 'returns loaded fog credentials' do
         creds = {:access_key_id => 'awskey', :secret_access_key => 'awspass', :session_token => nil}
         fog_hash = {:default => {:aws_access_key_id => 'awskey', :aws_secret_access_key => 'awspass'}}
