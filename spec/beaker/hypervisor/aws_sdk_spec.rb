@@ -1125,37 +1125,28 @@ module Beaker
       let(:dot_fog) { '.fog' }
       subject(:load_fog_credentials) { aws.load_fog_credentials(dot_fog) }
 
-      it 'returns loaded fog credentials' do
-        creds = {:access_key_id => 'awskey', :secret_access_key => 'awspass', :session_token => nil}
-        fog_hash = {:default => {:aws_access_key_id => 'awskey', :aws_secret_access_key => 'awspass'}}
+      it 'returns AWS::Credentials with loaded fog credentials and session token' do
+        fog_creds = {:aws_access_key_id => 'awskey', :aws_secret_access_key => 'awspass', :aws_session_token => 'sometoken'}
+        aws_creds = {:access_key_id => 'awskey', :secret_access_key => 'awspass', :session_token => 'sometoken'}
         expect(aws).to receive(:load_fog_credentials).and_call_original
-        expect(YAML).to receive(:load_file).and_return(fog_hash)
-        expect(load_fog_credentials).to have_attributes(creds)
-      end
-
-      it 'returns loaded fog credentials with session token' do
-        creds = {:access_key_id => 'awskey', :secret_access_key => 'awspass', :session_token => 'sometoken'}
-        fog_hash = {:default => {:aws_access_key_id => 'awskey', :aws_secret_access_key => 'awspass', :aws_session_token => 'sometoken'}}
-        expect(aws).to receive(:load_fog_credentials).and_call_original
-        expect(YAML).to receive(:load_file).and_return(fog_hash)
-        expect(load_fog_credentials).to have_attributes(creds)
+        expect(aws).to receive(:get_fog_credentials).and_return(fog_creds)
+        expect(load_fog_credentials).to have_attributes(aws_creds)
       end
 
       context 'raises errors' do
-        it 'if missing access_key credential' do
-          fog_hash = {:default => {:aws_secret_access_key => 'awspass'}}
+        it 'if missing aws_access_key_id credential' do
+          creds = {:aws_secret_access_key => 'awspass'}
           err_text = "You must specify an aws_access_key_id in your .fog file (#{dot_fog}) for ec2 instances!"
           expect(aws).to receive(:load_fog_credentials).and_call_original
-          expect(YAML).to receive(:load_file).and_return(fog_hash)
+          expect(aws).to receive(:get_fog_credentials).and_return(creds)
           expect { load_fog_credentials }.to raise_error(err_text)
         end
 
-        it 'if missing secret_key credential' do
-          dot_fog = '.fog'
-          fog_hash = {:default => {:aws_access_key_id => 'awskey'}}
+        it 'if missing aws_secret_access_key credential' do
+          creds = {:aws_access_key_id => 'awskey'}
           err_text = "You must specify an aws_secret_access_key in your .fog file (#{dot_fog}) for ec2 instances!"
           expect(aws).to receive(:load_fog_credentials).and_call_original
-          expect(YAML).to receive(:load_file).and_return(fog_hash)
+          expect(aws).to receive(:get_fog_credentials).and_return(creds)
           expect { load_fog_credentials }.to raise_error(err_text)
         end
       end
