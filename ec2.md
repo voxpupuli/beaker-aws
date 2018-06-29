@@ -34,7 +34,7 @@ hypervisor: ec2
       nfs_server: none
       consoleport: 443
 
-### Using role  
+### Using role
 *(If you'd like to use instance role you can disable reading fog credentials)*
 
 #### No fog file needed ####
@@ -67,7 +67,7 @@ Ports opened by default:
 * If you have a split install, all the hosts with `master`, `dashboard` and `database` role will have port 8143 opened
 
 ####`amisize` ####
-The [instance type](https://aws.amazon.com/ec2/instance-types/) - defaults to `m1.small`.  
+The [instance type](https://aws.amazon.com/ec2/instance-types/) - defaults to `m1.small`.
 ####`snapshot`####
 The snapshot to use for ec2 instance creation.
 ####`subnet_id`####
@@ -91,5 +91,17 @@ AMI:
 Size of the [EBS Volume](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumes.html) that will be attached to the EC2 instance.
 ####`vpc_id`####
 ID of the [VPC](https://aws.amazon.com/vpc/) to create the instances in.  If not provided will either use the default VPC for the provided region (marked as `isDefault`), otherwise falls back to `nil`.  If subnet information is provided (`subnet_id`/`subnet_ids`) this must be defined.
-####`user`####
+
+#### `sg_cidr_ips` ####
+Comma seperated list of [CIDRs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html) which define the whitelisted IPs used by beaker. They will be added to the security groups which are created and associated with EC2 instance. Below is an example:
+
+```
+HOSTS:
+  somehostname:
+    sg_cidr_ips: 172.28.40.0/24,172.20.112.0/20
+```
+
+This is optional and by default is set to '0.0.0.0/0'.
+
+#### `user` ####
 By default root login is not allowed with Amazon Linux. Setting it to ec2-user will trigger `sshd_config` and `authorized_keys` changes by beaker.
