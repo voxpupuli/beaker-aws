@@ -56,7 +56,7 @@ Beaker will automagically provision EC2 nodes, provided the 'platform:' section 
 ### Supported EC2 Variables ###
 These variables can either be set per-host or globally.
 
-####`additional_ports`####
+#### `additional_ports` ####
 Ports to be opened on the instance, in addition to those opened by Beaker to support Puppet functionality.  Can be a single value or an array.  Example valid values: 1001, [1001], [1001, 1002].
 
 Ports opened by default:
@@ -66,17 +66,22 @@ Ports opened by default:
 * `database` will also have [5432, 8080, 8081] opened
 * If you have a split install, all the hosts with `master`, `dashboard` and `database` role will have port 8143 opened
 
-####`amisize` ####
+#### `amisize` ####
 The [instance type](https://aws.amazon.com/ec2/instance-types/) - defaults to `m1.small`.
-####`snapshot`####
+
+#### `snapshot` ####
 The snapshot to use for ec2 instance creation.
-####`subnet_id`####
+
+#### `subnet_id` ####
 If defined the instance will be created in this EC2 subnet.  `vpc_id` must be defined.  Cannot be defined at the same time as `subnet_ids`.
-####`subnet_ids`####
+
+#### `subnet_ids` ####
 If defined the instace will be crated in one of the provided array of EC2 subnets.  `vpc_id` must be defined.  Cannot be defined at the same time as `subnet_id`.
-####`vmname`####
+
+#### `vmname` ####
 Used to look up the pre-defined AMI information in `config/image_templates/ec2.yaml`.  Will default to `platform` if not defined.
-#####Example ec2.yaml#####
+
+##### Example ec2.yaml #####
 In this example the `vmname` would be `puppetlabs-centos-5-x86-64-west`.  Looking up the `vmname` in the `ec2.yaml` file provides an AMI ID by type (`pe` or `foss`) and the region.
 
 ```
@@ -87,9 +92,10 @@ AMI:
     :region: us-west-2
 ```
 
-####`volume_size`####
+#### `volume_size` ####
 Size of the [EBS Volume](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumes.html) that will be attached to the EC2 instance.
-####`vpc_id`####
+
+#### `vpc_id` ####
 ID of the [VPC](https://aws.amazon.com/vpc/) to create the instances in.  If not provided will either use the default VPC for the provided region (marked as `isDefault`), otherwise falls back to `nil`.  If subnet information is provided (`subnet_id`/`subnet_ids`) this must be defined.
 
 #### `sg_cidr_ips` ####
