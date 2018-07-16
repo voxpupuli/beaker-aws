@@ -1,10 +1,20 @@
 # Change Log
 
+## [0.6.0](https://github.com/puppetlabs/beaker-aws/tree/0.6.0) (2018-07-16)
+[Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.5.0...0.6.0)
+
+**Merged pull requests:**
+
+- \(BKR-1481\) Rewrite beaker-aws to use shared .fog parsing [\#15](https://github.com/puppetlabs/beaker-aws/pull/15) ([Dakta](https://github.com/Dakta))
+- Custom CIDRs for security group, none default VPC fixes [\#14](https://github.com/puppetlabs/beaker-aws/pull/14) ([ardeshireshghi](https://github.com/ardeshireshghi))
+- \(MAINT\) Document Acceptance Test Setup [\#13](https://github.com/puppetlabs/beaker-aws/pull/13) ([Dakta](https://github.com/Dakta))
+
 ## [0.5.0](https://github.com/puppetlabs/beaker-aws/tree/0.5.0) (2018-06-13)
 [Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.4.0...0.5.0)
 
 **Merged pull requests:**
 
+- \(MAINT\) add changelog for 0.5.0 release [\#11](https://github.com/puppetlabs/beaker-aws/pull/11) ([kevpl](https://github.com/kevpl))
 - \(BKR-1464\) Rewrite to use AWS SDK v3 [\#10](https://github.com/puppetlabs/beaker-aws/pull/10) ([rodjek](https://github.com/rodjek))
 - \(MAINT\) Bump for new release [\#9](https://github.com/puppetlabs/beaker-aws/pull/9) ([cdenneen](https://github.com/cdenneen))
 - \(BKR-1199\) Updated documentation for use\_fog\_credentials [\#8](https://github.com/puppetlabs/beaker-aws/pull/8) ([cdenneen](https://github.com/cdenneen))
