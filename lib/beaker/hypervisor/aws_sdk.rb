@@ -265,6 +265,8 @@ module Beaker
       amitype = host['vmname'] || host['platform']
       amisize = host['amisize'] || 'm1.small'
       vpc_id = host['vpc_id'] || @options['vpc_id'] || nil
+      host['sg_cidr_ips'] = host['sg_cidr_ips'] || '0.0.0.0/0';
+      sg_cidr_ips = host['sg_cidr_ips'].split(',')
 
       if vpc_id && !subnet_id
         raise RuntimeError, "A subnet_id must be provided with a vpc_id"
@@ -324,9 +326,9 @@ module Beaker
         end
       end
 
-      security_group = ensure_group(vpc || region, Beaker::EC2Helper.amiports(host))
+      security_group = ensure_group(vpc || region, Beaker::EC2Helper.amiports(host), sg_cidr_ips)
       #check if ping is enabled
-      ping_security_group = ensure_ping_group(vpc || region)
+      ping_security_group = ensure_ping_group(vpc || region, sg_cidr_ips)
 
       msg = "aws-sdk: launching %p on %p using %p/%p%s" %
             [host.name, amitype, amisize, image_type,
@@ -340,7 +342,7 @@ module Beaker
           :enabled => true,
         },
         :key_name => ensure_key_pair(region).key_pairs.first.key_name,
-        :security_groups => [security_group.group_name, ping_security_group.group_name],
+        :security_group_ids => [security_group.group_id, ping_security_group.group_id],
         :instance_type => amisize,
         :disable_api_termination => false,
         :instance_initiated_shutdown_behavior => "terminate",
@@ -478,7 +480,7 @@ module Beaker
         # TODO: should probably be a in a shared method somewhere
         for tries in 1..10
           refreshed_instance = instance_by_id(instance.instance_id)
-          
+
           if refreshed_instance.nil?
             @logger.debug("Instance #{name} not yet available (#{e})")
           else
@@ -715,7 +717,7 @@ module Beaker
               # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/set-hostname.html
               # Also note that without an elastic ip set, while this will
               # preserve the hostname across a full shutdown/startup of the vm
-              # (as opposed to a reboot) -- the ip address will have changed. 
+              # (as opposed to a reboot) -- the ip address will have changed.
               host.exec(Command.new("sed -ie '/^HOSTNAME/ s/=.*/=#{host.name}/' /etc/sysconfig/network"))
             end
           end
@@ -908,9 +910,10 @@ module Beaker
     # Accepts a VPC as input for checking & creation.
     #
     # @param vpc [Aws::EC2::VPC] the AWS vpc control object
+    # @param sg_cidr_ips [Array<String>] CIDRs used for outbound security group rule
     # @return [Aws::EC2::SecurityGroup] created security group
     # @api private
-    def ensure_ping_group(vpc)
+    def ensure_ping_group(vpc, sg_cidr_ips = ['0.0.0.0/0'])
       @logger.notify("aws-sdk: Ensure security group exists that enables ping, create if not")
 
       group = client.describe_security_groups(
@@ -921,7 +924,7 @@ module Beaker
       ).security_groups.first
 
       if group.nil?
-        group = create_ping_group(vpc)
+        group = create_ping_group(vpc, sg_cidr_ips)
       end
 
       group
@@ -933,9 +936,10 @@ module Beaker
     #
     # @param vpc [Aws::EC2::VPC] the AWS vpc control object
     # @param ports [Array<Number>] an array of port numbers
+    # @param sg_cidr_ips [Array<String>] CIDRs used for outbound security group rule
     # @return [Aws::EC2::SecurityGroup] created security group
     # @api private
-    def ensure_group(vpc, ports)
+    def ensure_group(vpc, ports, sg_cidr_ips = ['0.0.0.0/0'])
       @logger.notify("aws-sdk: Ensure security group exists for ports #{ports.to_s}, create if not")
       name = group_id(ports)
 
@@ -947,7 +951,7 @@ module Beaker
       ).security_groups.first
 
       if group.nil?
-        group = create_group(vpc, ports)
+        group = create_group(vpc, ports, sg_cidr_ips)
       end
 
       group
@@ -957,10 +961,11 @@ module Beaker
     #
     # Accepts a region or VPC for group creation.
     #
-    # @param rv [Aws::EC2::Region, Aws::EC2::VPC] the AWS region or vpc control object
+    # @param region_or_vpc [Aws::EC2::Region, Aws::EC2::VPC] the AWS region or vpc control object
+    # @param sg_cidr_ips [Array<String>] CIDRs used for outbound security group rule
     # @return [Aws::EC2::SecurityGroup] created security group
     # @api private
-    def create_ping_group(region_or_vpc)
+    def create_ping_group(region_or_vpc, sg_cidr_ips = ['0.0.0.0/0'])
       @logger.notify("aws-sdk: Creating group #{PING_SECURITY_GROUP_NAME}")
       cl = region_or_vpc.is_a?(String) ? client(region_or_vpc) : client
 
@@ -972,13 +977,16 @@ module Beaker
 
       group = cl.create_security_group(params)
 
-      cl.authorize_security_group_ingress(
-        :cidr_ip     => '0.0.0.0/0',
-        :ip_protocol => 'icmp',
-        :from_port   => '8',  # 8 == ICMPv4 ECHO request
-        :to_port     => '-1', # -1 == All ICMP codes
-        :group_id    => group.group_id,
-      )
+      sg_cidr_ips.each do |cidr_ip|
+        add_ingress_rule(
+          cl,
+          group,
+          cidr_ip,
+          '8', # 8 == ICMPv4 ECHO request
+          '-1', # -1 == All ICMP codes
+          'icmp',
+        )
+      end
 
       group
     end
@@ -987,35 +995,56 @@ module Beaker
     #
     # Accepts a region or VPC for group creation.
     #
-    # @param rv [Aws::EC2::Region, Aws::EC2::VPC] the AWS region or vpc control object
+    # @param region_or_vpc [Aws::EC2::Region, Aws::EC2::VPC] the AWS region or vpc control object
     # @param ports [Array<Number>] an array of port numbers
+    # @param sg_cidr_ips [Array<String>] CIDRs used for outbound security group rule
     # @return [Aws::EC2::SecurityGroup] created security group
     # @api private
-    def create_group(region_or_vpc, ports)
+    def create_group(region_or_vpc, ports, sg_cidr_ips = ['0.0.0.0/0'])
       name = group_id(ports)
       @logger.notify("aws-sdk: Creating group #{name} for ports #{ports.to_s}")
+      @logger.notify("aws-sdk: Creating group #{name} with CIDR IPs #{sg_cidr_ips.to_s}")
       cl = region_or_vpc.is_a?(String) ? client(region_or_vpc) : client
 
-      group = cl.create_security_group(
+      params = {
+        :description => "Custom Beaker security group for #{ports.to_a}",
         :group_name  => name,
-        :description => "Custom Beaker security group for #{ports.to_a}"
-      )
+      }
+
+      params[:vpc_id] = region_or_vpc.vpc_id if region_or_vpc.is_a?(Aws::EC2::Types::Vpc)
+
+      group = cl.create_security_group(params)
 
       unless ports.is_a? Set
         ports = Set.new(ports)
       end
 
-      ports.each do |port|
-        cl.authorize_security_group_ingress(
-          :cidr_ip     => '0.0.0.0/0',
-          :ip_protocol => 'tcp',
-          :from_port   => port,
-          :to_port     => port,
-          :group_id    => group.group_id,
-        )
+      sg_cidr_ips.each do |cidr_ip|
+        ports.each do |port|
+          add_ingress_rule(cl, group, cidr_ip, port, port)
+        end
       end
 
       group
+    end
+
+    # Authorizes connections from certain CIDR to a range of ports
+    #
+    # @param cl [Aws::EC2::Client]
+    # @param sg_group [Aws::EC2::SecurityGroup] the AWS security group
+    # @param cidr_ip [String] CIDR used for outbound security group rule
+    # @param from_port [String] Starting Port number in the range
+    # @param to_port [String] Ending Port number in the range
+    # @return [void]
+    # @api private
+    def add_ingress_rule(cl, sg_group, cidr_ip, from_port, to_port, protocol = 'tcp')
+      cl.authorize_security_group_ingress(
+        :cidr_ip     => cidr_ip,
+        :ip_protocol => protocol,
+        :from_port   => from_port,
+        :to_port     => to_port,
+        :group_id    => sg_group.group_id,
+      )
     end
 
     # Return a hash containing AWS credentials

@@ -992,6 +992,8 @@ module Beaker
     describe '#ensure_group' do
       let(:vpc) { instance_double(Aws::EC2::Types::Vpc, :vpc_id => 1) }
       let(:ports) { [22, 80, 8080] }
+      let(:default_sg_cidr_ips) { ['0.0.0.0/0'] }
+
       subject(:ensure_group) { aws.ensure_group(vpc, ports) }
 
       let(:mock_client) { instance_double(Aws::EC2::Client) }
@@ -1030,7 +1032,7 @@ module Beaker
         let(:group) { nil }
 
         it 'creates group if group.nil?' do
-          expect(aws).to receive(:create_group).with(vpc, ports).and_return(group)
+          expect(aws).to receive(:create_group).with(vpc, ports, default_sg_cidr_ips).and_return(group)
           allow(mock_client).to receive(:describe_security_groups).with(any_args).and_return(security_group_result)
           expect(ensure_group).to eq(group)
         end
@@ -1038,7 +1040,8 @@ module Beaker
     end
 
     describe '#create_group' do
-      let(:rv) { double('rv') }
+      let(:group_vpc_id) { 'vpc-someid' }
+      let(:rv) { instance_double(Aws::EC2::Types::Vpc, :vpc_id => group_vpc_id) }
       let(:ports) { [22, 80, 8080] }
       subject(:create_group) { aws.create_group(rv, ports) }
 
@@ -1065,12 +1068,31 @@ module Beaker
       it 'creates group with expected arguments' do
         group_name = "Beaker-1521896090"
         group_desc = "Custom Beaker security group for #{ports.to_a}"
+
         expect(mock_client).to receive(:create_security_group).with(
           :group_name => group_name,
           :description => group_desc,
         ).and_return(group)
         allow(mock_client).to receive(:authorize_security_group_ingress).with(include(:group_id => group.group_id)).at_least(:once)
         expect(create_group).to eq(group)
+      end
+
+      context 'it is called with VPC as first param' do
+        it 'creates group with expected arguments including vpc id' do
+          group_name = "Beaker-1521896090"
+          group_desc = "Custom Beaker security group for #{ports.to_a}"
+
+          allow(rv).to receive(:is_a?).with(String).and_return(false)
+          allow(rv).to receive(:is_a?).with(Aws::EC2::Types::Vpc).and_return(true)
+
+          expect(mock_client).to receive(:create_security_group).with(
+            :group_name => group_name,
+            :description => group_desc,
+            :vpc_id => group_vpc_id,
+          ).and_return(group)
+          allow(mock_client).to receive(:authorize_security_group_ingress).with(include(:group_id => group.group_id)).at_least(:once)
+          expect(create_group).to eq(group)
+        end
       end
 
       it 'authorizes requested ports for group' do
@@ -1080,6 +1102,21 @@ module Beaker
           expect(mock_client).to receive(:authorize_security_group_ingress).with(include(:to_port => port)).once
         end
         expect(create_group).to eq(group)
+      end
+
+      context 'security group CIDRs are passed' do
+        let(:sg_cidr_ips) { ['172.28.40.0/24', '172.20.112.0/20'] }
+        subject(:create_group_with_cidr) { aws.create_group(rv, ports, sg_cidr_ips) }
+
+        it 'authorizes requested CIDR for group' do
+          allow(mock_client).to receive(:create_security_group).with(any_args).and_return(group)
+
+          sg_cidr_ips.each do |cidr_ip|
+            expect(mock_client).to receive(:authorize_security_group_ingress).with(include(:cidr_ip => cidr_ip)).exactly(3).times
+          end
+
+          expect(create_group_with_cidr).to eq(group)
+        end
       end
     end
 

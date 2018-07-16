@@ -45,7 +45,7 @@ examples of AMI IDs, check out their
 [Amazon Linux AMI page](https://aws.amazon.com/amazon-linux-ami/).
 
 The `region-id` variable represents the EC2 region ID from AWS. For reference,
-checkout EC2's 
+checkout EC2's
 [Regions and Availability Zones page]
 (http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html).
 An example of a region ID is `eu-west-1` for the Ireland data center.
@@ -72,7 +72,7 @@ The `host-vmname-value` references the ID created in the Amazon Image Config fil
 above.  If not provided, Beaker will try to name an AMI Config using the host's
 platform string.
 
-**Note:** If you are using `amazon-6-x86_64` as `vmname`, you have to specify `platform` as `el-6-x86_64`. Similarly for `amazon-6-i386` use `el-6-i386` as `platform`. 
+**Note:** If you are using `amazon-6-x86_64` as `vmname`, you have to specify `platform` as `el-6-x86_64`. Similarly for `amazon-6-i386` use `el-6-i386` as `platform`.
 
 The `type` references the type variable in the Amazon Image Config file as well,
 so this key picks out the particular AMI ID from the set available for this type
@@ -82,7 +82,7 @@ The `ami-size` variable refers to
 [instance types](https://aws.amazon.com/ec2/instance-types/) by their model name.
 Some examples of these values are "m3.large", "c4.xlarge", and "r3.8xlarge". The
 default value if this key is not provided used by Beaker is "m1.small".
-      
+
 ### ec2 VM Hostnames
 
 By default, beaker will set the hostnames of the VMs to the 'Public DNS' hostname supplied by ec2 (and which is normally based on the Public IP address). If your test requires the hosts be named identically to the `<hostname>:` from your beaker hosts file, set `:use_beaker_hostnames: true` in the beaker hosts file.
@@ -147,3 +147,8 @@ like so:
     [AWS EC2 200 0.142666 0 retries] describe_key_pairs(:filters=>[{:name=>"key-name",:values=>["Beaker-johnsmith-Johns-Ubuntu-2-local"]}])
 
 The values string in that line is what you're looking for.
+
+### Add custom CIDRs to security groups inbound rules
+
+Beaker creates 2 security groups to be able to access the EC2 instance. By default it defines inbound rules which allow access to everyone(0.0.0.0/0). In order to limit that access it is possible to configure the host param `sg_cidr_ips` which can be supplid with a list of CIDRs.
+
