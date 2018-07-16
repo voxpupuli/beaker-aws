@@ -1075,8 +1075,7 @@ module Beaker
     # @return [Aws::Credentials] ec2 credentials
     # @api private
     def load_fog_credentials(dot_fog = '.fog')
-      fog = YAML.load_file( dot_fog )
-      default = fog[:default]
+      default = get_fog_credentials(dot_fog)
 
       raise "You must specify an aws_access_key_id in your .fog file (#{dot_fog}) for ec2 instances!" unless default[:aws_access_key_id]
       raise "You must specify an aws_secret_access_key in your .fog file (#{dot_fog}) for ec2 instances!" unless default[:aws_secret_access_key]
