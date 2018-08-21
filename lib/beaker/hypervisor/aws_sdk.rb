@@ -612,9 +612,9 @@ module Beaker
     # @return [void]
     # @api private
     def configure_hosts
-      non_netdev_hosts = @hosts.select{ |h| !(h['platform'] =~ /f5-|netscaler/) }
-      non_netdev_hosts.each do |host|
-        host_entries = non_netdev_hosts.map do |h|
+      non_netdev_windows_hosts = @hosts.select{ |h| !(h['platform'] =~ /f5-|netscaler|windows/) }
+      non_netdev_windows_hosts.each do |host|
+        host_entries = non_netdev_windows_hosts.map do |h|
           h == host ? etc_hosts_entry(h, :private_ip) : etc_hosts_entry(h)
         end
         host_entries.unshift "127.0.0.1\tlocalhost localhost.localdomain\n"
@@ -629,7 +629,12 @@ module Beaker
     # @api private
     def enable_root_on_hosts
       @hosts.each do |host|
-        enable_root(host)
+        if host['disable_root_ssh'] == true
+          @logger.notify("aws-sdk: Not enabling root for instance as disable_root_ssh is set to 'true'.")
+        else
+          @logger.notify("aws-sdk: Enabling root ssh")
+          enable_root(host)
+        end
       end
     end
 
@@ -709,6 +714,8 @@ module Beaker
           if host['platform'] =~ /el-7/
             # on el-7 hosts, the hostname command doesn't "stick" randomly
             host.exec(Command.new("hostnamectl set-hostname #{host.name}"))
+          elsif host['platform'] =~ /windows/
+            @logger.notify('aws-sdk: Change hostname on windows is not supported.')
           else
             next if host['platform'] =~ /netscaler/
             host.exec(Command.new("hostname #{host.name}"))
@@ -728,6 +735,8 @@ module Beaker
           if host['platform'] =~ /el-7/
             # on el-7 hosts, the hostname command doesn't "stick" randomly
             host.exec(Command.new("hostnamectl set-hostname #{host.hostname}"))
+          elsif host['platform'] =~ /windows/
+            @logger.notify('aws-sdk: Change hostname on windows is not supported.')
           else
             next if host['platform'] =~ /netscaler/
             host.exec(Command.new("hostname #{host.hostname}"))

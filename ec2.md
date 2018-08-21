@@ -111,3 +111,6 @@ This is optional and by default is set to '0.0.0.0/0'.
 
 #### `user` ####
 By default root login is not allowed with Amazon Linux. Setting it to ec2-user will trigger `sshd_config` and `authorized_keys` changes by beaker.
+
+#### `disable_root_ssh` ####
+By default Beaker enabled root login on the instance. There are situation where we use AMIs which are pre-configured. Setting `disable_root_ssh` to `true` will stop enablign the root login.
