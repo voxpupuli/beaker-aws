@@ -44,7 +44,7 @@ module Beaker
     }}
 
     before :each do
-      @hosts = make_hosts({:snapshot => :pe}, 6)
+      @hosts = make_hosts({:snapshot => :pe}, 7)
       @hosts[0][:platform] = "centos-5-x86-64-west"
       @hosts[1][:platform] = "centos-6-x86-64-west"
       @hosts[2][:platform] = "centos-7-x86-64-west"
@@ -53,6 +53,7 @@ module Beaker
       @hosts[4][:platform] = 'f5-host'
       @hosts[4][:user] = 'notroot'
       @hosts[5][:platform] = 'netscaler-host'
+      @hosts[6][:platform] = 'windows-host'
 
       ENV['AWS_ACCESS_KEY'] = nil
       ENV['AWS_SECRET_ACCESS_KEY'] = nil
@@ -635,9 +636,9 @@ module Beaker
       it { is_expected.to be_nil }
 
       context 'calls #set_etc_hosts' do
-        it 'for each host (except the f5 ones)' do
-          non_netdev_hosts = @hosts.select{ |h| !(h['platform'] =~ /f5|netscaler/) }
-          expect(aws).to receive(:set_etc_hosts).exactly(non_netdev_hosts.size).times
+        it 'for each host (except the f5 and windows ones)' do
+          non_netdev_windows_hosts = @hosts.select{ |h| !(h['platform'] =~ /f5|netscaler|windows/) }
+          expect(aws).to receive(:set_etc_hosts).exactly(non_netdev_windows_hosts.size).times
           expect(configure_hosts).to be_nil
         end
 
@@ -668,6 +669,25 @@ module Beaker
         allow(aws).to receive(:enable_root_netscaler)
         expect( aws ).to receive(:enable_root_f5).with( @hosts[4] ).once()
         aws.enable_root_on_hosts()
+      end
+      context 'when :disable_root_ssh is true' do
+        it 'should not enable root' do
+          @hosts = [@hosts[0]]
+
+          @hosts[0][:disable_root_ssh] = true
+          expect( aws ).to_not receive(:enable_root)
+          aws.enable_root_on_hosts();
+        end
+      end
+
+      context 'when :disable_root_ssh is defined and false' do
+        it 'should enable root' do
+          @hosts = [@hosts[0]]
+
+          @hosts[0][:disable_root_ssh] = false
+          expect( aws ).to receive(:enable_root).with(@hosts[0]).once()
+          aws.enable_root_on_hosts();
+        end
       end
     end
 
@@ -715,14 +735,14 @@ module Beaker
       context 'for each host' do
         it 'calls exec' do
           @hosts.each do |host|
-            expect(host).to receive(:exec).once unless host['platform'] =~ /netscaler/
+            expect(host).to receive(:exec).once unless host['platform'] =~ /netscaler|windows/
           end
           expect(set_hostnames).to eq(@hosts)
         end
 
         it 'passes a Command instance to exec' do
           @hosts.each do |host|
-            expect(host).to receive(:exec).with( instance_of(Beaker::Command) ).once unless host['platform'] =~ /netscaler/
+            expect(host).to receive(:exec).with( instance_of(Beaker::Command) ).once unless host['platform'] =~ /netscaler|windows/
           end
           expect(set_hostnames).to eq(@hosts)
         end
@@ -737,9 +757,9 @@ module Beaker
 
         it 'sets the the vmhostname to the beaker config name for each host' do
           options[:use_beaker_hostnames] = true
-	  @hosts.each do |host|
+          @hosts.each do |host|
             host.instance_eval("@name = 'prettyponyprincess'")
-	  end
+          end
           expect(set_hostnames).to eq(@hosts)
           @hosts.each do |host|
             expect(host[:vmhostname]).not_to eq(nil)
@@ -748,6 +768,13 @@ module Beaker
           end
         end
 
+      end
+
+      context 'windows host platform' do
+        it 'should not change hostname when use_beaker_hostnames is enabled' do
+          options[:use_beaker_hostnames] = true
+          expect(@hosts[6]).to_not receive(:exec)
+        end
       end
     end
 
