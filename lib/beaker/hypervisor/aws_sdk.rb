@@ -342,12 +342,17 @@ module Beaker
           :enabled => true,
         },
         :key_name => ensure_key_pair(region).key_pairs.first.key_name,
-        :security_group_ids => [security_group.group_id, ping_security_group.group_id],
         :instance_type => amisize,
         :disable_api_termination => false,
         :instance_initiated_shutdown_behavior => "terminate",
-        :subnet_id => subnet_id,
+        :network_interfaces => [{
+          :subnet_id => subnet_id,
+          :groups => [security_group.group_id, ping_security_group.group_id],
+          :device_index => 0,
+        }],
       }
+      assoc_pub_ip_addr = host['associate_public_ip_address']
+      config[:network_interfaces][0][:associate_public_ip_address] = assoc_pub_ip_addr unless assoc_pub_ip_addr.nil?
       config[:block_device_mappings] = block_device_mappings if image.root_device_type == :ebs
       reservation = client(region).run_instances(config)
       reservation.instances.first
