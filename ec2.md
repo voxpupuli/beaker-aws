@@ -114,3 +114,8 @@ By default root login is not allowed with Amazon Linux. Setting it to ec2-user w
 
 #### `disable_root_ssh` ####
 By default Beaker enabled root login on the instance. There are situation where we use AMIs which are pre-configured. Setting `disable_root_ssh` to `true` will stop enablign the root login.
+
+#### `associate_public_ip_address` ####
+Beaker uses default setting from subnet policies for the boolean 
+variable "associate public ip address". Use this setting to 
+override that when needed.

@@ -1213,5 +1213,45 @@ module Beaker
         aws
       end
     end
+
+    describe 'create_instance' do
+      let(:mock_client) { instance_double(Aws::EC2::Client) }
+
+      before(:each) do
+        allow(aws).to receive(:client).and_return(mock_client)
+        vpc = instance_double(Aws::EC2::Types::Vpc, :vpc_id => 1337)
+        describe_vpcs_result = instance_double(Aws::EC2::Types::DescribeVpcsResult, :vpcs => [vpc])
+        allow(mock_client).to receive(:describe_vpcs).and_return(describe_vpcs_result)
+        image = instance_double(Aws::EC2::Types::Image, :root_device_type => :no_device)
+        described_images = instance_double(Aws::EC2::Types::DescribeImagesResult, :images => [image])
+        allow(mock_client).to receive(:describe_images).and_return(described_images)
+        security_group = instance_double(Aws::EC2::Types::GroupIdentifier, :group_id => 69)
+        security_groups_result =
+            instance_double(Aws::EC2::Types::DescribeSecurityGroupsResult, :security_groups => [security_group])
+        allow(mock_client).to receive(:describe_security_groups).and_return(security_groups_result)
+        key_pair = instance_double(Aws::EC2::Types::KeyPairInfo, :key_name => 'a-key')
+        key_pair_result = instance_double(Aws::EC2::Types::DescribeKeyPairsResult, :key_pairs => [key_pair])
+        allow(aws).to receive(:ensure_key_pair).and_return(key_pair_result)
+      end
+
+      it 'sets associate_public_ip_address when included' do
+        host = @hosts[0]
+        host['associate_public_ip_address'] = true
+        variable_path = hash_including(
+            :network_interfaces => [hash_including(:associate_public_ip_address => true)])
+        reservation = instance_double(Aws::EC2::Types::Reservation, :instances => [instance_double(Aws::EC2::Types::Instance)])
+        expect(mock_client).to receive(:run_instances).with(variable_path).and_return(reservation)
+        aws.create_instance(host, amispec, nil)
+      end
+
+      it 'omits associate_public_ip_address when not included' do
+        host = @hosts[0]
+        variable_path = hash_including(
+            :network_interfaces => [hash_excluding(:associate_public_ip_address => anything)])
+        reservation = instance_double(Aws::EC2::Types::Reservation, :instances => [instance_double(Aws::EC2::Types::Instance)])
+        expect(mock_client).to receive(:run_instances).with(variable_path).and_return(reservation)
+        aws.create_instance(host, amispec, nil)
+      end
+    end
   end
 end
