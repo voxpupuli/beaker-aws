@@ -1,13 +1,21 @@
 # Change Log
 
-[Unreleased](https://github.com/puppetlabs/beaker-aws/compare/0.7.0...master)
+[Unreleased](https://github.com/puppetlabs/beaker-aws/compare/0.8.0...master)
 
-## [0.7.0](https://github.com/puppetlabs/beaker-aws/tree/0.7.0) (2018-12-12)
-[Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.6.0...0.7.0)
+## [0.8.0](https://github.com/puppetlabs/beaker-aws/tree/0.8.0) (2018-12-12)
+[Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.7.0...0.8.0)
 
 **Merged pull requests:**
 
 - \(BKR-1546\) Added associate\_public\_ip\_address as host variable that is inserted into the AWS config if set
+
+## [0.7.0](https://github.com/puppetlabs/beaker-aws/tree/0.7.0) (2018-08-27)
+[Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.6.0...0.7.0)
+
+**Merged pull requests:**
+
+- \(BKR-1522\) Add options to drop some of the provisioning
+- \(BKR-1509\) Hypervisor usage instructions for Beaker 4.0
 
 ## [0.6.0](https://github.com/puppetlabs/beaker-aws/tree/0.6.0) (2018-07-16)
 [Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.5.0...0.6.0)
