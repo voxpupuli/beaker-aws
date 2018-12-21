@@ -267,9 +267,14 @@ module Beaker
       vpc_id = host['vpc_id'] || @options['vpc_id'] || nil
       host['sg_cidr_ips'] = host['sg_cidr_ips'] || '0.0.0.0/0';
       sg_cidr_ips = host['sg_cidr_ips'].split(',')
+      assoc_pub_ip_addr = host['associate_public_ip_address']
 
       if vpc_id && !subnet_id
         raise RuntimeError, "A subnet_id must be provided with a vpc_id"
+      end
+      
+      if assoc_pub_ip_addr && !subnet_id
+        raise RuntimeError, "A subnet_id must be provided when configuring assoc_pub_ip_addr"
       end
 
       # Use snapshot provided for this host
@@ -345,14 +350,17 @@ module Beaker
         :instance_type => amisize,
         :disable_api_termination => false,
         :instance_initiated_shutdown_behavior => "terminate",
-        :network_interfaces => [{
+      }
+      if assoc_pub_ip_addr
+        config[:network_interfaces] = [{
           :subnet_id => subnet_id,
           :groups => [security_group.group_id, ping_security_group.group_id],
           :device_index => 0,
-        }],
-      }
-      assoc_pub_ip_addr = host['associate_public_ip_address']
-      config[:network_interfaces][0][:associate_public_ip_address] = assoc_pub_ip_addr unless assoc_pub_ip_addr.nil?
+          :associate_public_ip_address => assoc_pub_ip_addr,
+        }]
+      else
+        config[:subnet_id] = subnet_id
+      end
       config[:block_device_mappings] = block_device_mappings if image.root_device_type == :ebs
       reservation = client(region).run_instances(config)
       reservation.instances.first

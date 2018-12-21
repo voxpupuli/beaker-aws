@@ -1234,6 +1234,12 @@ module Beaker
         allow(aws).to receive(:ensure_key_pair).and_return(key_pair_result)
       end
 
+      it 'raises an error when associate_public_ip_address is included without subnet_id' do
+        host = @hosts[0]
+        host['associate_public_ip_address'] = true
+        expect{ aws.create_instance(host, amispec, nil) }.to raise_error("A subnet_id must be provided when configuring assoc_pub_ip_addr")
+      end
+
       it 'sets associate_public_ip_address when included' do
         host = @hosts[0]
         host['associate_public_ip_address'] = true
@@ -1241,13 +1247,13 @@ module Beaker
             :network_interfaces => [hash_including(:associate_public_ip_address => true)])
         reservation = instance_double(Aws::EC2::Types::Reservation, :instances => [instance_double(Aws::EC2::Types::Instance)])
         expect(mock_client).to receive(:run_instances).with(variable_path).and_return(reservation)
-        aws.create_instance(host, amispec, nil)
+        aws.create_instance(host, amispec, "subnetfoo")
       end
 
-      it 'omits associate_public_ip_address when not included' do
+      it 'omits network_interfaces and associate_public_ip_address when not included, instead using subnet_id' do
         host = @hosts[0]
         variable_path = hash_including(
-            :network_interfaces => [hash_excluding(:associate_public_ip_address => anything)])
+            :subnet_id => nil)
         reservation = instance_double(Aws::EC2::Types::Reservation, :instances => [instance_double(Aws::EC2::Types::Instance)])
         expect(mock_client).to receive(:run_instances).with(variable_path).and_return(reservation)
         aws.create_instance(host, amispec, nil)
