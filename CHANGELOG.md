@@ -1,6 +1,13 @@
 # Change Log
 
-[Unreleased](https://github.com/puppetlabs/beaker-aws/compare/0.8.0...master)
+[Unreleased](https://github.com/puppetlabs/beaker-aws/compare/0.8.1...master)
+
+## [0.8.1](https://github.com/puppetlabs/beaker-aws/tree/0.8.0) (2018-12-21)
+[Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.8.0...0.8.1)
+
+**Merged pull requests:**
+
+- \(maint\) Fix BKR-1546 for the case where subnet is nil
 
 ## [0.8.0](https://github.com/puppetlabs/beaker-aws/tree/0.8.0) (2018-12-12)
 [Full Changelog](https://github.com/puppetlabs/beaker-aws/compare/0.7.0...0.8.0)
