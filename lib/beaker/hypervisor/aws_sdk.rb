@@ -485,7 +485,7 @@ module Beaker
       # Wait for each node to reach status :running
       @logger.notify("aws-sdk: Waiting for all hosts to be #{state_name}")
       instances.each do |x|
-        name = x[:host].name
+        name = x[:host] ? x[:host].name : x[:name]
         instance = x[:instance]
         @logger.notify("aws-sdk: Wait for node #{name} to be #{state_name}")
         # Here we keep waiting for the machine state to reach 'running' with an
