@@ -119,6 +119,7 @@ module Beaker
       before :each do
         expect(aws).to receive(:launch_all_nodes)
         expect(aws).to receive(:add_tags)
+        expect(aws).to receive(:modify_network_interface)
         expect(aws).to receive(:populate_dns)
         expect(aws).to receive(:enable_root_on_hosts)
         expect(aws).to receive(:set_hostnames)
@@ -702,7 +703,7 @@ module Beaker
         allow( aws ).to receive( :backoff_sleep )
         sha_mock = Object.new
         allow( Digest::SHA256 ).to receive( :new ).and_return(sha_mock)
-        expect( sha_mock ).to receive( :hexdigest ).once()
+        expect( sha_mock ).to receive( :hexdigest ).and_return('thistest').once()
         enable_root_f5
       end
 

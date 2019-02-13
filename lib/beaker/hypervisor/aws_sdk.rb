@@ -65,10 +65,18 @@ module Beaker
       # Perform the main launch work
       launch_all_nodes()
 
-      wait_for_status_netdev()
-
       # Add metadata tags to each instance
+      # tagging early as some nodes take longer
+      # to initialize and terminate before it has
+      # a chance to provision
       add_tags()
+
+      # adding the correct security groups to the
+      # network interface, as during the `launch_all_nodes()`
+      # step they never get assigned, although they get created
+      modify_network_interface()
+
+      wait_for_status_netdev()
 
       # Grab the ip addresses and dns from EC2 for each instance to use for ssh
       populate_dns()
@@ -352,6 +360,10 @@ module Beaker
         :instance_initiated_shutdown_behavior => "terminate",
       }
       if assoc_pub_ip_addr
+        # this never gets created, so they end up with
+        # default security group which only allows for
+        # ssh access from outside world which
+        # doesn't work well with remote devices etc.
         config[:network_interfaces] = [{
           :subnet_id => subnet_id,
           :groups => [security_group.group_id, ping_security_group.group_id],
@@ -587,6 +599,33 @@ module Beaker
       nil
     end
 
+    # Add correct security groups to hosts network_interface
+    # as during the create_instance stage it is too early in process
+    # to configure
+    #
+    # @return [void]
+    # @api private
+    def modify_network_interface
+      @hosts.each do |host|
+        instance = host['instance']
+        host['sg_cidr_ips'] = host['sg_cidr_ips'] || '0.0.0.0/0';
+        sg_cidr_ips = host['sg_cidr_ips'].split(',')
+
+        # Define tags for the instance
+        @logger.notify("aws-sdk: Update network_interface for #{host.name}")
+
+        security_group = ensure_group(instance[:network_interfaces].first, Beaker::EC2Helper.amiports(host), sg_cidr_ips)
+        ping_security_group = ensure_ping_group(instance[:network_interfaces].first, sg_cidr_ips)
+
+        client.modify_network_interface_attribute(
+          :network_interface_id => "#{instance[:network_interfaces].first[:network_interface_id]}",
+          :groups => [security_group.group_id, ping_security_group.group_id],
+        )
+      end
+
+      nil
+    end
+
     # Populate the hosts IP address from the EC2 dns_name
     #
     # @return [void]
@@ -692,13 +731,19 @@ module Beaker
         end
         backoff_sleep(tries)
       end
-      host['user'] = 'root'
-      host.close
+      host['user'] = 'admin'
       sha256 = Digest::SHA256.new
-      password = sha256.hexdigest((1..50).map{(rand(86)+40).chr}.join.gsub(/\\/,'\&\&'))
-      host['ssh'] = {:password => password}
-      host.exec(Command.new("echo -e '#{password}\\n#{password}' | tmsh modify auth password admin"))
+      password = sha256.hexdigest((1..50).map{(rand(86)+40).chr}.join.gsub(/\\/,'\&\&')) + 'password!'
+      # disabling password policy to account for the enforcement level set
+      # and the generated password is sometimes too `01070366:3: Bad password (admin): BAD PASSWORD: \
+      # it is too simplistic/systematic`
+      # will be enabled after the password is set
+      host.exec(Command.new('modify auth password-policy policy-enforcement disabled'))
+      host.exec(Command.new("modify auth user admin password #{password}"))
+      host.exec(Command.new('modify auth password-policy policy-enforcement enabled'))
       @logger.notify("f5: Configured admin password to be #{password}")
+      host.close
+      host['ssh'] = {:password => password}
     end
 
     # Enables root access for a host on an netscaler platform
@@ -730,7 +775,7 @@ module Beaker
           elsif host['platform'] =~ /windows/
             @logger.notify('aws-sdk: Change hostname on windows is not supported.')
           else
-            next if host['platform'] =~ /netscaler/
+            next if host['platform'] =~ /f5-|netscaler/
             host.exec(Command.new("hostname #{host.name}"))
             if host['vmname'] =~ /^amazon/
               # Amazon Linux requires this to preserve host name changes across reboots.
@@ -751,7 +796,7 @@ module Beaker
           elsif host['platform'] =~ /windows/
             @logger.notify('aws-sdk: Change hostname on windows is not supported.')
           else
-            next if host['platform'] =~ /netscaler/
+            next if host['platform'] =~ /ft-|netscaler/
             host.exec(Command.new("hostname #{host.hostname}"))
             if host['vmname'] =~ /^amazon/
               # See note above
