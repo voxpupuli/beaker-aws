@@ -530,9 +530,9 @@ module Beaker
           wait_for_status(:running, @hosts)
 
           wait_for_status(nil, @hosts) do |instance|
-            instance_status_collection = instance.client.describe_instance_status({:instance_ids => [instance.instance_id]})
-            first_instance = instance_status_collection.reservations.first.instances.first
-            first_instance[:system_status][:status] == "ok"
+            instance_status_collection = client.describe_instance_status({:instance_ids => [instance.instance_id]})
+            first_instance = instance_status_collection.first[:instance_statuses].first
+            first_instance[:system_status][:status] == "ok" if first_instance
           end
 
           break
