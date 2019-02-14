@@ -544,7 +544,7 @@ module Beaker
           wait_for_status(nil, @hosts) do |instance|
             instance_status_collection = client.describe_instance_status({:instance_ids => [instance.instance_id]})
             first_instance = instance_status_collection.first[:instance_statuses].first
-            first_instance[:system_status][:status] == "ok" if first_instance
+            first_instance[:instance_status][:status] == "ok" if first_instance
           end
 
           break
@@ -737,10 +737,8 @@ module Beaker
       # disabling password policy to account for the enforcement level set
       # and the generated password is sometimes too `01070366:3: Bad password (admin): BAD PASSWORD: \
       # it is too simplistic/systematic`
-      # will be enabled after the password is set
       host.exec(Command.new('modify auth password-policy policy-enforcement disabled'))
       host.exec(Command.new("modify auth user admin password #{password}"))
-      host.exec(Command.new('modify auth password-policy policy-enforcement enabled'))
       @logger.notify("f5: Configured admin password to be #{password}")
       host.close
       host['ssh'] = {:password => password}
