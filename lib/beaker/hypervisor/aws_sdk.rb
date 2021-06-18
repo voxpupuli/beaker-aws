@@ -162,7 +162,12 @@ module Beaker
     # @param [String] id The id of the instance to return
     # @return [Aws::EC2::Types::Instance] An Aws::EC2 instance object
     def instance_by_id(id)
-      client.describe_instances(:instance_ids => [id]).reservations.first.instances.first
+      begin
+        client.describe_instances(:instance_ids => [id]).reservations.first.instances.first
+      rescue Aws::EC2::Errors::InvalidInstanceIDNotFound
+        @logger.notify("aws-sdk: Error while trying to describe instance (id: #{id}). Likely the instance is not created yet.")
+        nil
+      end
     end
 
     # Return all instances currently on ec2.
@@ -507,7 +512,7 @@ module Beaker
           refreshed_instance = instance_by_id(instance.instance_id)
 
           if refreshed_instance.nil?
-            @logger.debug("Instance #{name} not yet available (#{e})")
+            @logger.debug("Instance #{name} not yet available")
           else
             if block_given?
               test_result = yield refreshed_instance
@@ -1165,3 +1170,4 @@ module Beaker
     end
   end
 end
+
