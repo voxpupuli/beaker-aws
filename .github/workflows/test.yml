@@ -2,22 +2,27 @@ name: Test
 
 on:
   - pull_request
+  - push
+
+env:
+  BUNDLE_WITHOUT: release
 
 jobs:
-  build:
+  rspec:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        ruby:
-          - "2.4"
-          - "2.5"
-          - "2.6"
-          - "2.7"
-          - "3.0"
+        include:
+          - ruby: "2.4"
+          - ruby: "2.5"
+          - ruby: "2.6"
+          - ruby: "2.7"
+          - ruby: "3.0"
+            coverage: "yes"
     env:
-      BUNDLE_WITHOUT: release
-    name: Ruby ${{ matrix.ruby }}
+      COVERAGE: ${{ matrix.coverage }}
+    name: RSpec - Ruby ${{ matrix.ruby }}
     steps:
       - uses: actions/checkout@v2
       - name: Install Ruby ${{ matrix.ruby }}
@@ -25,5 +30,7 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
+      - name: spec tests
+        run: bundle exec rake test:spec
       - name: Verify gem builds
-        run: bundle exec gem build beaker-rspec.gemspec
+        run: gem build *.gemspec

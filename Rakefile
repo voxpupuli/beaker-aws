@@ -1,34 +1,17 @@
 require 'rspec/core/rake_task'
-require 'github_changelog_generator/task'
 
-namespace :changelog do
-  # Gets the github token needed for github_changelog_generator
-  # - from env var CHANGELOG_GITHUB_TOKEN
-  # - if unset, will be limited in number of queries allowed to github
-  # - setup a token at https://github.com/settings/tokens
-  def github_token
-    ENV["CHANGELOG_GITHUB_TOKEN"]
-  end
+begin
+  require 'rubygems'
+  require 'github_changelog_generator/task'
 
-  GitHubChangelogGenerator::RakeTask.new :full do |config|
-    config.token = github_token
-    config.user = "puppetlabs"
-    config.project = "beaker-aws"
-    # Sets next version in the changelog
-    # - if unset, newest changes will be listed as 'unreleased'
-    # - setting this value directly sets section title on newest changes
-    if !ENV['NEW_VERSION'].nil?
-      config.future_release = ENV["NEW_VERSION"]
-    end
+  GitHubChangelogGenerator::RakeTask.new :changelog do |config|
+    config.exclude_labels = %w{duplicate question invalid wontfix wont-fix skip-changelog}
+    config.user = 'voxpupuli'
+    config.project = 'beaker-aws'
+    gem_version = Gem::Specification.load("#{config.project}.gemspec").version
+    config.future_release = gem_version
   end
-
-  GitHubChangelogGenerator::RakeTask.new :unreleased do |config|
-    config.token = github_token
-    config.user = "puppetlabs"
-    config.project = "beaker-aws"
-    config.unreleased_only = true
-    config.output = "" # blank signals clg to print to output rather than a file
-  end
+rescue LoadError
 end
 
 namespace :test do
