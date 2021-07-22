@@ -22,7 +22,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec-its'
   s.add_development_dependency 'fakefs', '~> 1.3', '<= 1.3.3'
   s.add_development_dependency 'rake', '~> 13.0'
-  s.add_development_dependency 'pry', '~> 0.10'
 
   # Documentation dependencies
   s.add_development_dependency 'yard'
